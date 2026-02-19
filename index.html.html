@@ -720,6 +720,78 @@
 </div>
 
 <script>
+// ========== JSONBin কনফিগারেশন - আপনার তথ্য সহ ==========
+const JSONBIN_CONFIG = {
+    apiKey: "$2a$10$nQcUsm.IExsgjr6WgFnRLO5zyNueZqIbQsX3DrYCuGCZ87JiXGzGa",
+    binId: "6997655bd0ea881f40c7b5b7",
+    accountId: "699763851a35bc0895802c88",
+    enabled: true
+};
+
+// JSONBin কনফিগারেশন লোড ফাংশন (আপডেটেড)
+async function loadJsonBinConfig() {
+    try {
+        // লোকাল স্টোরেজ থেকে লোড
+        const config = localStorage.getItem(JSONBIN_CONFIG_KEY);
+        if (config) {
+            jsonBinConfig = JSON.parse(config);
+        } else {
+            // আপনার দেওয়া ডিফল্ট কনফিগ ব্যবহার
+            jsonBinConfig = {
+                apiKey: JSONBIN_CONFIG.apiKey,
+                binId: JSONBIN_CONFIG.binId,
+                enabled: JSONBIN_CONFIG.enabled
+            };
+            // লোকাল স্টোরেজে সংরক্ষণ
+            localStorage.setItem(JSONBIN_CONFIG_KEY, JSON.stringify(jsonBinConfig));
+        }
+        updateJsonBinStatus();
+    } catch(e) {
+        console.warn('Failed to load JSONBin config', e);
+        jsonBinConfig = {
+            apiKey: JSONBIN_CONFIG.apiKey,
+            binId: JSONBIN_CONFIG.binId,
+            enabled: JSONBIN_CONFIG.enabled
+        };
+    }
+}
+
+// JSONBin সংযোগ পরীক্ষা ফাংশন (আপডেটেড)
+async function testJsonBinConnection() {
+    const apiKey = document.getElementById('jsonbin-api-key')?.value || jsonBinConfig.apiKey;
+    const binId = document.getElementById('jsonbin-bin-id')?.value || jsonBinConfig.binId;
+    const resultEl = document.getElementById('jsonbin-test-result');
+    
+    if (!apiKey || !binId) {
+        if (resultEl) resultEl.innerHTML = '<span style="color:var(--danger);">API কী এবং বিন ID দিন</span>';
+        return;
+    }
+    
+    if (resultEl) resultEl.innerHTML = '<span style="color:var(--info);">সংযোগ পরীক্ষা হচ্ছে...</span>';
+    
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+            method: 'GET',
+            headers: {
+                'X-Master-Key': apiKey
+            }
+        });
+        
+        if (response.ok) {
+            if (resultEl) resultEl.innerHTML = '<span style="color:var(--success);">✓ সংযোগ সফল!</span>';
+            jsonBinConfig.apiKey = apiKey;
+            jsonBinConfig.binId = binId;
+            jsonBinConfig.enabled = true;
+            saveJsonBinConfig();
+            showToast('JSONBin সংযোগ সফল হয়েছে', 'success');
+        } else {
+            if (resultEl) resultEl.innerHTML = `<span style="color:var(--danger);">✗ সংযোগ ব্যর্থ: ${response.status}</span>`;
+        }
+    } catch(e) {
+        if (resultEl) resultEl.innerHTML = `<span style="color:var(--danger);">✗ ত্রুটি: ${e.message}</span>`;
+    }
+}
+</script>
 // ========== STATE ==========
 let currentUser = null;
 let activeChatWith = null;
